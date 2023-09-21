@@ -127,7 +127,6 @@ public class Executor
             for (Node node : loopNode.children)
             {
                 Object value = visit(node);  // statement or test
-
                 // Evaluate the test condition. Stop looping if true.
                 b = (node.type == TEST) && ((boolean) value);
                 if (b) break;

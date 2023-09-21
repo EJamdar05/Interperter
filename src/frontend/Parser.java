@@ -131,6 +131,7 @@ public class Parser
             case REPEAT :     stmtNode = parseRepeatStatement();     break;
             case WHILE:       stmtNode = parseWhileStatement();      break;
             case IF:          stmtNode = parseIfStatement();         break;
+            case FOR:          stmtNode = parseForStatement();         break;
             case WRITE :      stmtNode = parseWriteStatement();      break;
             case WRITELN :    stmtNode = parseWritelnStatement();    break;
             case SEMICOLON :  stmtNode = null; break;  // empty statement
@@ -291,6 +292,77 @@ public class Parser
 
         return ifNode;
 
+    }
+
+    private Node parseForStatement(){
+        Node compoundNode = new Node(Node.NodeType.COMPOUND);
+        Node loopNode = new Node(Node.NodeType.LOOP);
+
+        Node assignNode;
+        Node testNode = new Node(Node.NodeType.TEST);
+        Node relationNode = null;
+        Node lhsValueNode;
+        Node operationNode;
+        Node numberNode = new Node(Node.NodeType.INTEGER_CONSTANT);
+
+        numberNode.value = (long) 1;
+
+        currentToken = scanner.nextToken();  // Consume COMPOUND token
+
+        assignNode = parseAssignmentStatement();
+        lhsValueNode = assignNode.children.get(0);
+
+        compoundNode.adopt(assignNode);
+        compoundNode.adopt(loopNode);
+
+        loopNode.adopt(testNode);
+
+
+        boolean isAdd = false;
+        if(currentToken.type == TO){
+            relationNode = new Node(GT);
+            currentToken = scanner.nextToken();
+            isAdd = true;
+        }
+        else if(currentToken.type == DOWNTO){
+            relationNode = new Node(LT);
+            currentToken = scanner.nextToken();
+            isAdd = false;
+        }else syntaxError("Expecting TO or DOWNTO");
+
+        testNode.adopt(relationNode);
+        relationNode.adopt(lhsValueNode);
+        relationNode.adopt(parseExpression());
+
+
+
+
+        if(currentToken.type == DO){
+            currentToken = scanner.nextToken();
+        } else {
+            syntaxError("Expecting DO");
+        }
+        loopNode.adopt(parseStatement());
+
+
+        assignNode = new Node(Node.NodeType.ASSIGN);
+        loopNode.adopt(assignNode);
+
+        assignNode.adopt(lhsValueNode);
+
+        if(isAdd){
+            operationNode = new Node(ADD);
+        }else{
+            operationNode = new Node(SUBTRACT);
+        }
+
+        assignNode.adopt(operationNode);
+        operationNode.adopt(lhsValueNode);
+        operationNode.adopt(numberNode);
+
+
+
+        return compoundNode;
     }
 
     private Node parseWriteStatement()
